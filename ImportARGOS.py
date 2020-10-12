@@ -22,9 +22,14 @@ outputSR = arcpy.SpatialReference(54002)
 
 outPath, outName = os.path.split(outputFC)
 
+
 #Create an empty feature class to which we'll add features
 arcpy.CreateFeatureclass_management(outPath, outName, "POINT",'','','',outputSR) 
 
+# Add TagID, LC, IQ, and Date fields to the output feature class
+arcpy.AddField_management(outputFC,"TagID","LONG")
+arcpy.AddField_management(outputFC,"LC","TEXT")
+arcpy.AddField_management(outputFC,"Date","DATE")
 
 
 #%% Construct a while loop to iterate through all lines in the datafile
