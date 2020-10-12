@@ -10,3 +10,6 @@
 ## Created: Fall 2020
 ## Author: John.Fay@duke.edu (for ENV859)
 ##---------------------------------------------------------------------
+
+# Import modules
+import sys, os, arcpy
