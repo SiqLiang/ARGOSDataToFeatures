@@ -20,7 +20,7 @@ inputFile = 'C:\\ARGOSTracking\\Data\\ARGOSData\\1997dg.txt'
 outputFC = "C:/ARGOSTracking/Scratch/ARGOStrack.shp"
 outputSR = arcpy.SpatialReference(54002)
 
-outPath, outName = os.path.split(outputFC)
+outPath,outName= os.path.split(outputFC)
 
 
 #Create an empty feature class to which we'll add features
@@ -30,6 +30,10 @@ arcpy.CreateFeatureclass_management(outPath, outName, "POINT",'','','',outputSR)
 arcpy.AddField_management(outputFC,"TagID","LONG")
 arcpy.AddField_management(outputFC,"LC","TEXT")
 arcpy.AddField_management(outputFC,"Date","DATE")
+
+# Create the insert cursor
+cur = arcpy.da.InsertCursor(outputFC,['Shape@','TagID','LC','Date'])
+
 
 
 #%% Construct a while loop to iterate through all lines in the datafile
@@ -64,11 +68,38 @@ while lineString:
         obsLat = line2Data[2]
         obsLon= line2Data[5]
         
-        # Print results to see how we're doing
-        print (tagID,obsDate,obsTime,obsLC,"Lat:"+obsLat,"Long:"+obsLon)
-        
+        try:
+                    # Convert raw coordinate strings to numbers
+            if obsLat[-1] == 'N':
+                obsLat = float(obsLat[:-1])
+            else:
+                obsLat = float(obsLat[:-1]) * -1
+            if obsLon[-1] == 'E':
+                obsLon = float(obsLon[:-1])
+            else:
+                obsLon = float(obsLon[:-1]) * -1
+            
+            #Create a point object
+            obsPoint=arcpy.Point()
+            obsPoint.X =obsLon
+            obsPoint.Y =obsLat
+            
+             # Convert the point to a point geometry object with spatial reference
+            inputSR = arcpy.SpatialReference(4326)
+            obsPointGeom = arcpy.PointGeometry(obsPoint,inputSR)
+            # Print results to see how we're doing
+            #print (tagID,obsDate,obsTime,obsLC,"Lat:"+obsLat,"Long:"+obsLon)
+        except Exception as e:
+            print(f"Error ading record {tagID} to the output")
+            
+        #add a features using our insert cursor
+        feature= cur.insertRow((obsPointGeom,tagID,obsLC,obsDate.replace(".","/") + " " + obsTime))
+            
     # Move to the next line so the while loop progresses
     lineString = inputFileObj.readline()
     
 #Close the file object
 inputFileObj.close()
+
+#Delete the cursor object
+del cur
